@@ -28,28 +28,19 @@ class EnsureUserHasRole
             return redirect()->guest(route('login'));
         }
 
-        // Load role relationship if not loaded
+        // Load role relationship if not already eager-loaded
         if (! $user->relationLoaded('role')) {
             $user->load('role');
         }
 
-        $userRoleSlug = $user->role?->slug;
-
-        // Flatten comma-separated roles (e.g. 'role:user,admin' passes as one string)
-        $allowedRoles = [];
-        foreach ($roles as $role) {
-            foreach (explode(',', $role) as $r) {
-                $allowedRoles[] = trim($r);
-            }
-        }
-
-        if (! $userRoleSlug || ! in_array($userRoleSlug, $allowedRoles, true)) {
+        // Validate user role directly without nested loops
+        if (! empty($roles) && ! $user->hasRole($roles)) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Forbidden. You do not have permission to access this resource.',
-                    'required_roles' => $allowedRoles,
-                    'current_role' => $userRoleSlug,
+                    'required_roles' => $roles,
+                    'current_role' => $user->role?->slug,
                 ], Response::HTTP_FORBIDDEN);
             }
 
