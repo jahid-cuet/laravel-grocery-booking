@@ -47,7 +47,7 @@ This application is built with a **4-tier layered architecture** emphasizing sep
 1. **Repository Pattern (`app/Repositories`)**:
    - `GroceryItemRepositoryInterface` & `OrderRepositoryInterface` declare all data contracts.
    - Eloquent implementations are bound in `RepositoryServiceProvider`.
-   - Business logic is completely decoupled from Eloquent/database query syntaxes.
+   - Catalogue and order persistence are accessed through repository contracts; the order service intentionally uses a pessimistic Eloquent row lock inside its transaction to protect stock during checkout.
 
 2. **Service Layer (`app/Services`)**:
    - `AuthService`, `GroceryService`, and `OrderService` encapsulate domain business logic.
@@ -165,6 +165,23 @@ docker compose up -d --build
 
 ## API Endpoints Reference
 
+Base URL for local testing:
+
+```text
+http://127.0.0.1:8000
+```
+
+The catalogue GET endpoints are public. Authentication, order, and admin endpoints require a JWT in this header:
+
+```text
+Accept: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+Recommended testing order: register or login → copy the returned JWT → call `/api/auth/me` → test orders or admin endpoints. A normal public registration can never choose the `admin` role.
+
+Common response codes: `200` successful request, `201` resource created, `401` missing/invalid token, `403` insufficient role, `404` resource not found, and `422` validation error.
+
 ### 1. Authentication Endpoints (`/api/auth`)
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
@@ -212,6 +229,74 @@ docker compose up -d --build
 
 ---
 
+## Quick cURL Testing Guide
+
+Reviewers can test all core API features immediately using these step-by-step cURL commands:
+
+### 1. Admin Workflow (Add, View, Update, Stock Management, Delete):
+```bash
+# Optional: create a normal customer account (role is assigned automatically)
+curl -s -X POST http://127.0.0.1:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"name":"New User", "email":"new@example.com", "password":"secret123"}'
+
+# 1. Login as Admin & extract JWT Token
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"email": "admin@grocery.com", "password": "password123"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+
+# 2. Add a new grocery item (POST /api/admin/groceries)
+curl -X POST http://127.0.0.1:8000/api/admin/groceries \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name": "Organic Honey 500g", "price": 8.99, "stock_quantity": 40, "is_active": true}'
+
+# 3. View catalogue & search (GET /api/admin/groceries?search=Honey)
+curl -s -X GET "http://127.0.0.1:8000/api/admin/groceries?search=Honey" \
+  -H "Authorization: Bearer $TOKEN"
+
+# 4. Manage inventory stock (PATCH /api/admin/groceries/1/inventory)
+curl -X PATCH http://127.0.0.1:8000/api/admin/groceries/1/inventory \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"quantity": 100, "operation": "set"}'
+
+# 5. Remove grocery item (DELETE /api/admin/groceries/1)
+curl -X DELETE http://127.0.0.1:8000/api/admin/groceries/1 \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### 2. User / Customer Workflow (Browse, Atomic Booking, Order History):
+```bash
+# 1. Login as Customer & extract JWT Token
+USER_TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@grocery.com", "password": "password123"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+
+# 2. Browse available in-stock items (GET /api/groceries)
+curl -s -X GET http://127.0.0.1:8000/api/groceries
+
+# 3. Book multiple items with atomic safe stock deduction (POST /api/orders)
+curl -X POST http://127.0.0.1:8000/api/orders \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $USER_TOKEN" \
+  -d '{
+    "items": [
+      { "grocery_item_id": 2, "quantity": 2 },
+      { "grocery_item_id": 3, "quantity": 1 }
+    ],
+    "notes": "Please deliver fresh items."
+  }'
+
+# 4. View user order history (GET /api/orders)
+curl -s -X GET http://127.0.0.1:8000/api/orders \
+  -H "Authorization: Bearer $USER_TOKEN"
+```
+
+---
+
 ## Frontend (Blade + AJAX & Localization)
 
 ### 1. Interactive Blade Storefront:
@@ -222,7 +307,7 @@ docker compose up -d --build
 - **AJAX Checkout**: Instant order submission with confirmation modal displaying the generated Order Number.
 
 ### 2. Localization Support (Bonus):
-- English (`en`) and Bangla (`bn`) full translation coverage (`lang/en/messages.php`, `lang/bn/messages.php`).
+- English (`en`) and Bangla (`bn`) translations for the customer-facing storefront and shared layout (`lang/en/messages.php`, `lang/bn/messages.php`).
 - Language toggle in the navigation bar switching locale instantly with session persistence.
 
 ### Why both API and Blade registration exist
@@ -243,46 +328,6 @@ php artisan test
 vendor/bin/pint
 ```
 
-```
-   PASS  Tests\Feature\AdminGroceryApiTest
-  ✓ admin can list all grocery items with pagination and filters
-  ✓ admin can add a new grocery item
-  ✓ admin cannot add grocery item with duplicate name or invalid data
-  ✓ admin can view single grocery item details
-  ✓ admin can update grocery item details
-  ✓ admin can remove grocery item
-  ✓ admin can manage inventory and stock levels
-  ✓ regular user cannot access admin grocery routes
-  ✓ unauthenticated guest cannot access admin grocery routes
-
-   PASS  Tests\Feature\AuthApiTest
-  ✓ user can register successfully
-  ✓ registration fails with duplicate email
-  ✓ user can login and receive jwt token
-  ✓ login fails with invalid credentials
-  ✓ authenticated user can fetch profile
-  ✓ authenticated user can refresh jwt token
-  ✓ authenticated user can logout
-
-   PASS  Tests\Feature\OrderApiTest
-  ✓ authenticated user can place an order with multiple items
-  ✓ order placement fails with insufficient stock
-  ✓ order placement fails for inactive grocery items
-  ✓ order price is snapshotted at time of booking
-  ✓ authenticated user can view their order history
-  ✓ user can view a single order by id
-  ✓ user cannot view another users order
-  ✓ unauthenticated user cannot place an order
-  ✓ order with non-existent grocery item fails validation
-
-   PASS  Tests\Feature\RoleMiddlewareTest
-   PASS  Tests\Feature\StorefrontWebTest
-   PASS  Tests\Feature\UserGroceryApiTest
-
-  Tests:    all configured tests passed
-  Duration: 2.8s
-```
-
 ---
 
 ## Submission Checklist Verification
@@ -294,6 +339,6 @@ vendor/bin/pint
 - [x] **Frontend**: Blade storefront + AJAX live stock check and cart booking.
 - [x] **Database & Concurrency**: Relational MySQL schema with `lockForUpdate()` pessimistic lock preventing overselling.
 - [x] **Bonus — Docker**: Multi-container setup with `Dockerfile` & `docker-compose.yml`.
-- [x] **Bonus — Localization**: English & Bangla translation with instant switcher.
+- [x] **Bonus — Localization**: English/Bangla translations for the customer-facing storefront with an instant session-based switcher.
 - [x] **Automated Tests**: Pest feature and unit tests are included; run `php artisan test` to verify the configured environment.
 - [x] **Documentation**: Full setup guide, API endpoint table, and architecture notes.
