@@ -70,6 +70,11 @@
             <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm shadow-lg shadow-brand-500/25 active:scale-[0.98] transition-all">
                 Sign In
             </button>
+
+            <p class="text-center text-xs text-slate-500">
+                New customer?
+                <a href="{{ route('register') }}" class="font-bold text-brand-700 hover:underline">Create an account</a>
+            </p>
         </form>
     </div>
 

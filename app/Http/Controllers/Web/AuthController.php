@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\WebRegisterRequest;
 use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +14,33 @@ use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        protected AuthService $authService,
+    ) {}
+
+    /**
+     * Show the web registration form.
+     */
+    public function showRegisterForm(): View
+    {
+        return view('auth.register');
+    }
+
+    /**
+     * Register a normal customer through the Blade interface.
+     */
+    public function register(WebRegisterRequest $request): RedirectResponse
+    {
+        $result = $this->authService->register($request->validated());
+
+        Auth::login($result['user']);
+        $request->session()->regenerate();
+        $request->session()->put('jwt_token', $result['token']);
+
+        return redirect()->intended(route('store.index'))
+            ->with('success', "Welcome to FreshCart, {$result['user']->name}!");
+    }
+
     /**
      * Show the web login form.
      */

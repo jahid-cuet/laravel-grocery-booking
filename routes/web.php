@@ -11,6 +11,8 @@ Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('local
 
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
     Route::get('/login/quick/{role}', [AuthController::class, 'quickLogin'])->name('login.quick');

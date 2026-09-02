@@ -38,6 +38,41 @@ test('login page loads successfully with quick login options', function () {
         ->assertSee('Customer Store');
 });
 
+test('guest can view the customer registration form', function () {
+    $this->get('/register')
+        ->assertOk()
+        ->assertSee('Create your account')
+        ->assertSee('Create an account');
+});
+
+test('customer can register from the web form', function () {
+    $response = $this->post('/register', [
+        'name' => 'New Web Customer',
+        'email' => 'web-customer@example.com',
+        'password' => 'secret123',
+        'password_confirmation' => 'secret123',
+    ]);
+
+    $response->assertRedirect(route('store.index'));
+    $this->assertAuthenticated();
+    $this->assertDatabaseHas('users', [
+        'email' => 'web-customer@example.com',
+        'role_id' => Role::where('slug', Role::USER)->value('id'),
+    ]);
+});
+
+test('web registration validates password confirmation', function () {
+    $response = $this->post('/register', [
+        'name' => 'Attempted Admin',
+        'email' => 'attempted-admin@example.com',
+        'password' => 'secret123',
+        'password_confirmation' => 'different123',
+    ]);
+
+    $response->assertSessionHasErrors('password');
+    $this->assertGuest();
+});
+
 test('admin can login via web form and is redirected to admin dashboard', function () {
     $response = $this->post('/login', [
         'email' => 'admin@grocery.com',

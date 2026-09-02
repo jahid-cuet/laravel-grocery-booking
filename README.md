@@ -2,9 +2,9 @@
 
 > **PARAMETER-X Limited · Take-Home Assessment**  
 > **Role:** Full Stack Engineer (PHP/Laravel)  
-> **Stack:** PHP 8.4 · Laravel 12 · MySQL · JWT Auth · Blade + AJAX · Docker · Pest PHP
+> **Stack:** PHP 8.4 · Laravel 13 · MySQL · JWT Auth · Blade + AJAX · Docker · Pest PHP
 
-A complete and robust **Grocery Booking System** where an **Admin** manages inventory/catalogue and **Users** browse products and place multi-item bookings with **atomic, concurrency-safe stock deduction**.
+A complete and robust **Grocery Booking System** where an **Admin** manages inventory/catalogue and **Users** register, browse products, and place multi-item bookings with **atomic, concurrency-safe stock deduction**.
 
 ---
 
@@ -64,6 +64,11 @@ This application is built with a **4-tier layered architecture** emphasizing sep
 5. **Historical Price Snapshotting**:
    - `order_items` stores the `unit_price` at booking time so future grocery price modifications never distort past invoices.
 
+6. **Shared API and Blade Authentication Service**:
+   - API registration and the Blade registration form both use `AuthService`, so user creation rules are consistent.
+   - Blade registration automatically signs the customer into the web session and stores a JWT for authenticated AJAX checkout.
+   - Registration never exposes a role selector; every public registration creates a normal customer account.
+
 ---
 
 ## System Features
@@ -110,7 +115,13 @@ This application is built with a **4-tier layered architecture** emphasizing sep
    php artisan migrate --seed
    ```
 
-5. **Start Local Server**:
+5. **Build frontend assets**:
+   ```bash
+   npm install
+   npm run build
+   ```
+
+6. **Start Local Server**:
    ```bash
    php artisan serve
    ```
@@ -131,6 +142,14 @@ docker compose exec app php artisan migrate --seed
 
 # 3. Access web application
 open http://localhost:8000
+```
+
+The PHP-FPM image does not include Node.js. Build frontend assets on the host before rebuilding the image:
+
+```bash
+npm install
+npm run build
+docker compose up -d --build
 ```
 
 ---
@@ -196,6 +215,7 @@ open http://localhost:8000
 ## Frontend (Blade + AJAX & Localization)
 
 ### 1. Interactive Blade Storefront:
+- **Customer Registration**: `/register` provides a validated Blade registration form and automatically signs in the new customer.
 - **Product Browsing**: Clean product grid with price tags, categories, and dynamic stock badges (`In Stock`, `Low Stock`, `Out of Stock`).
 - **AJAX Live Stock Check**: Section 5 interaction — clicking *"Live Stock Check"* queries `/api/groceries/{id}` and updates stock status without full page reload.
 - **AJAX Cart Drawer**: Slide-over cart for adding, updating, and removing line items dynamically.
@@ -205,11 +225,15 @@ open http://localhost:8000
 - English (`en`) and Bangla (`bn`) full translation coverage (`lang/en/messages.php`, `lang/bn/messages.php`).
 - Language toggle in the navigation bar switching locale instantly with session persistence.
 
+### Why both API and Blade registration exist
+
+The assignment requires JWT-based registration, so `/api/auth/register` is the API implementation for mobile clients, Postman, and other consumers. The `/register` Blade page provides the same capability for browser users. Both flows share `AuthService`, while the Blade flow additionally creates the Laravel web session needed for the browser experience.
+
 ---
 
 ## Automated Testing
 
-The Pest test suite covers authentication, role middleware, repository bindings, inventory CRUD, order booking, and localized web views. Run the suite in a configured MySQL environment to see the current test and assertion totals.
+The Pest test suite covers API and Blade authentication, rejection of privileged registration, role middleware, repository bindings, inventory CRUD, order booking, and localized web views. Run the suite in a configured MySQL environment to see the current test and assertion totals.
 
 ```bash
 # Run complete test suite
