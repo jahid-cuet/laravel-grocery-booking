@@ -22,7 +22,7 @@ A complete and robust **Grocery Booking System** where an **Admin** manages inve
 
 ## Architecture & Design Decisions
 
-This application is built with a **4-tier layered architecture** emphasizing separation of concerns, testability, and enterprise-grade concurrency safety:
+This application is built with a **4-tier layered architecture** emphasizing separation of concerns, testability, and concurrency safety:
 
 ```
 [ Client / Web Browser / Mobile App ]
@@ -56,10 +56,10 @@ This application is built with a **4-tier layered architecture** emphasizing sep
 3. **Concurrency-Safe Stock Deduction (Pessimistic Locking)**:
    - Order placement wraps line-item processing inside a `DB::transaction`.
    - Each item row is locked with `GroceryItem::where('id', $id)->lockForUpdate()->first()` (`SELECT ... FOR UPDATE`).
-   - Prevents race conditions and guarantees **zero overselling** even under simultaneous concurrent user checkout requests.
+   - Prevents race conditions and guarantees **zero overselling** under simultaneous checkout requests.
 
 4. **Middleware-Level Role-Based Access Control (RBAC)**:
-   - Access control is strictly enforced at the route/middleware level (`role:admin`, `role:user`), never hardcoded inside individual controller methods.
+   - Access control is enforced at the route/middleware level (`role:admin`, `role:user`), never hardcoded inside individual controller methods.
 
 5. **Historical Price Snapshotting**:
    - `order_items` stores the `unit_price` at booking time so future grocery price modifications never distort past invoices.
@@ -149,7 +149,7 @@ open http://localhost:8000
 ### 1. Authentication Endpoints (`/api/auth`)
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Public | Register a new user (`role` defaults to `user`) |
+| `POST` | `/api/auth/register` | Public | Register a normal user; privileged roles cannot be selected publicly |
 | `POST` | `/api/auth/login` | Public | Authenticate user and receive JWT bearer token |
 | `POST` | `/api/auth/logout` | Authenticated | Invalidate and blacklist current JWT token |
 | `POST` | `/api/auth/refresh` | Authenticated | Refresh JWT bearer token |
@@ -209,7 +209,7 @@ open http://localhost:8000
 
 ## Automated Testing
 
-The test suite contains **38 Feature tests (232 assertions)** covering authentication, role middleware, repository bindings, inventory CRUD, pessimistic concurrency locks, and localized web views.
+The Pest test suite covers authentication, role middleware, repository bindings, inventory CRUD, order booking, and localized web views. Run the suite in a configured MySQL environment to see the current test and assertion totals.
 
 ```bash
 # Run complete test suite
@@ -255,7 +255,7 @@ vendor/bin/pint
    PASS  Tests\Feature\StorefrontWebTest
    PASS  Tests\Feature\UserGroceryApiTest
 
-  Tests:    38 passed (232 assertions)
+  Tests:    all configured tests passed
   Duration: 2.8s
 ```
 
@@ -271,5 +271,5 @@ vendor/bin/pint
 - [x] **Database & Concurrency**: Relational MySQL schema with `lockForUpdate()` pessimistic lock preventing overselling.
 - [x] **Bonus — Docker**: Multi-container setup with `Dockerfile` & `docker-compose.yml`.
 - [x] **Bonus — Localization**: English & Bangla translation with instant switcher.
-- [x] **Automated Tests**: 38 feature tests passing with 100% success rate.
+- [x] **Automated Tests**: Pest feature and unit tests are included; run `php artisan test` to verify the configured environment.
 - [x] **Documentation**: Full setup guide, API endpoint table, and architecture notes.
