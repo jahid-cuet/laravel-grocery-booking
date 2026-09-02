@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Repositories\Contracts\GroceryItemRepositoryInterface;
+use App\Repositories\Contracts\OrderRepositoryInterface;
 use App\Repositories\Eloquent\GroceryItemRepository;
+use App\Repositories\Eloquent\OrderRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -15,6 +17,7 @@ class RepositoryServiceProvider extends ServiceProvider
      */
     public array $bindings = [
         GroceryItemRepositoryInterface::class => GroceryItemRepository::class,
+        OrderRepositoryInterface::class => OrderRepository::class,
     ];
 
     /**
