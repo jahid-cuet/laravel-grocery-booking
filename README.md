@@ -310,9 +310,12 @@ curl -s -X GET http://127.0.0.1:8000/api/orders \
 - English (`en`) and Bangla (`bn`) translations for the customer-facing storefront and shared layout (`lang/en/messages.php`, `lang/bn/messages.php`).
 - Language toggle in the navigation bar switching locale instantly with session persistence.
 
-### Why both API and Blade registration exist
+### 3. Web Authentication & 1-Click Demo Login (Bonus UX)
 
-The assignment requires JWT-based registration, so `/api/auth/register` is the API implementation for mobile clients, Postman, and other consumers. The `/register` Blade page provides the same capability for browser users. Both flows share `AuthService`, while the Blade flow additionally creates the Laravel web session needed for the browser experience.
+- **Core Requirement Alignment**: The assessment specifically mandates **JWT-based API authentication** (`/api/auth/register`, `/api/auth/login`, etc.) for client consumers.
+- **Why Blade Auth Exists**: To provide an interactive and complete browser evaluation experience, dedicated Blade `/login` and `/register` views were added.
+- **1-Click Evaluator Login**: The login page includes 1-click demo login buttons for **Admin Portal** (`admin@grocery.com`) and **Customer Store** (`user@grocery.com`) to allow reviewers to immediately explore role-protected features in the browser without manual typing.
+- **Unified Logic**: Both API and Blade authentication share the same core `AuthService` so business logic, role assignments, and password validations remain strictly consistent across all entry points.
 
 ---
 
