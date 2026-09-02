@@ -45,7 +45,7 @@
     <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
-                <!-- Logo -->
+                <!-- Logo & Nav Links -->
                 <div class="flex items-center gap-8">
                     <a href="{{ route('store.index') }}" class="flex items-center gap-3 group">
                         <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform duration-200">
@@ -67,10 +67,18 @@
                         <a href="{{ route('store.orders') }}" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors {{ request()->routeIs('store.orders') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                             {{ __('messages.order_history') }}
                         </a>
+                        @auth
+                            @if(auth()->user()->isAdmin())
+                                <a href="{{ route('admin.groceries.index') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition-colors {{ request()->routeIs('admin.*') ? 'bg-slate-900 text-white' : 'text-amber-700 hover:bg-amber-50' }} flex items-center gap-1.5">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    <span>Admin Panel</span>
+                                </a>
+                            @endif
+                        @endauth
                     </nav>
                 </div>
 
-                <!-- Actions: Language, User Badge, Cart -->
+                <!-- Actions: Language, User Badge / Auth Buttons, Cart -->
                 <div class="flex items-center gap-3">
                     <!-- Language Switcher (Bonus Point) -->
                     <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
@@ -82,16 +90,28 @@
                         </a>
                     </div>
 
-                    <!-- Customer Badge -->
-                    <div class="hidden lg:flex items-center gap-2 pl-3 border-l border-slate-200 text-xs">
-                        <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600">
-                            {{ substr($demoUser->name ?? 'User', 0, 1) }}
+                    @auth
+                        <!-- Authenticated User Profile & Logout -->
+                        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+                            <div class="text-right hidden sm:block text-xs">
+                                <span class="block font-extrabold text-slate-800 leading-tight">{{ auth()->user()->name }}</span>
+                                <span class="inline-block px-1.5 py-0.2 text-[10px] font-bold uppercase rounded {{ auth()->user()->isAdmin() ? 'bg-slate-900 text-amber-300' : 'bg-emerald-100 text-emerald-800' }}">
+                                    {{ auth()->user()->isAdmin() ? __('messages.admin_badge') : __('messages.user_badge') }}
+                                </span>
+                            </div>
+                            <form method="POST" action="{{ route('logout') }}" class="inline-block">
+                                @csrf
+                                <button type="submit" title="Logout" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                </button>
+                            </form>
                         </div>
-                        <div class="text-left">
-                            <span class="block font-semibold text-slate-800 leading-tight">{{ $demoUser->name ?? 'Demo Customer' }}</span>
-                            <span class="inline-block px-1.5 py-0.2 text-[10px] font-bold uppercase rounded bg-emerald-100 text-emerald-800">{{ __('messages.user_badge') }}</span>
-                        </div>
-                    </div>
+                    @else
+                        <!-- Guest Login Button -->
+                        <a href="{{ route('login') }}" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-sm">
+                            Sign In
+                        </a>
+                    @endauth
 
                     <!-- Cart Drawer Trigger Button -->
                     <button id="openCartBtn" onclick="toggleCartDrawer(true)" class="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-md shadow-brand-500/20 active:scale-95 transition-all">
@@ -105,6 +125,24 @@
             </div>
         </div>
     </header>
+
+    <!-- Session Flash Banners -->
+    @if(session('success'))
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
+            <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <span>{{ session('success') }}</span>
+            </div>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
+            <div class="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <span>{{ session('error') }}</span>
+            </div>
+        </div>
+    @endif
 
     <!-- Main Content -->
     <main class="flex-grow">
@@ -131,12 +169,11 @@
                     </div>
                     <button onclick="toggleCartDrawer(false)" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
-                <!-- Drawer Items List (Rendered dynamically via AJAX / JS) -->
+                <!-- Drawer Items List -->
                 <div id="cartItemsList" class="flex-1 overflow-y-auto px-6 py-4 divide-y divide-slate-100">
                     <!-- Populated by JS -->
                 </div>
@@ -213,7 +250,7 @@
 
     <!-- Global Store State & AJAX Scripts -->
     <script>
-        const API_JWT_TOKEN = @json($jwtToken ?? '');
+        const API_JWT_TOKEN = @json(session('jwt_token') ?? ($jwtToken ?? ''));
         let cart = JSON.parse(localStorage.getItem('grocery_cart') || '[]');
 
         function saveCart() {
@@ -272,7 +309,6 @@
                 const data = await res.json();
                 const item = data.data;
 
-                // Update UI in real-time without reloading
                 if (badge) {
                     if (item.stock_quantity > 5) {
                         badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800";
@@ -297,7 +333,6 @@
             }
         }
 
-        // Add to Cart AJAX interaction
         function addToCart(id, name, price, maxStock) {
             const qtyInput = document.getElementById(`qty-input-${id}`);
             const quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
@@ -401,7 +436,6 @@
             `).join('');
         }
 
-        // AJAX Order Placement (Section 5 Requirement)
         async function submitAjaxOrder() {
             if (cart.length === 0) {
                 showToast('Cart is empty!', 'error');
@@ -437,12 +471,10 @@
                     throw new Error(errorMsg);
                 }
 
-                // Order placed successfully!
                 cart = [];
                 saveCart();
                 toggleCartDrawer(false);
 
-                // Show confirmation modal
                 document.getElementById('modalOrderNumber').textContent = data.data.order_number;
                 document.getElementById('modalOrderTotal').textContent = `Total: ${data.data.formatted_total} (${data.data.items_count} items)`;
                 document.getElementById('successModal').classList.remove('hidden');
@@ -460,7 +492,6 @@
             window.location.reload();
         }
 
-        // Initialize cart on load
         document.addEventListener('DOMContentLoaded', () => {
             renderCart();
         });

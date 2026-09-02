@@ -18,10 +18,14 @@ class EnsureUserHasRole
         $user = $request->user();
 
         if (! $user) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthenticated.',
-            ], Response::HTTP_UNAUTHORIZED);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthenticated.',
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+
+            return redirect()->guest(route('login'));
         }
 
         // Load role relationship if not loaded
@@ -40,12 +44,16 @@ class EnsureUserHasRole
         }
 
         if (! $userRoleSlug || ! in_array($userRoleSlug, $allowedRoles, true)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Forbidden. You do not have permission to access this resource.',
-                'required_roles' => $allowedRoles,
-                'current_role' => $userRoleSlug,
-            ], Response::HTTP_FORBIDDEN);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Forbidden. You do not have permission to access this resource.',
+                    'required_roles' => $allowedRoles,
+                    'current_role' => $userRoleSlug,
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            abort(403, 'Forbidden. You do not have permission to access this page.');
         }
 
         return $next($request);
