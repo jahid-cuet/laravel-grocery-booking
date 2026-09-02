@@ -43,9 +43,9 @@ class GroceryService
      *
      * @return LengthAwarePaginator<GroceryItem>
      */
-    public function getAvailableItems(int $perPage = 15): LengthAwarePaginator
+    public function getAvailableItems(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        return $this->groceryRepository->getAvailablePaginated($perPage);
+        return $this->groceryRepository->getAvailablePaginated($perPage, $filters);
     }
 
     /**
@@ -54,6 +54,14 @@ class GroceryService
     public function getById(int|string $id): GroceryItem
     {
         return $this->groceryRepository->findOrFail($id);
+    }
+
+    /**
+     * Find an active grocery item for public/customer-facing views.
+     */
+    public function getActiveById(int|string $id): GroceryItem
+    {
+        return $this->groceryRepository->findActiveOrFail($id);
     }
 
     /**

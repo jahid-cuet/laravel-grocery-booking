@@ -17,8 +17,8 @@ class AuthService
      */
     public function register(array $data): array
     {
-        $roleSlug = $data['role'] ?? Role::USER;
-        $role = Role::where('slug', $roleSlug)->firstOrFail();
+        // Public registration must never be able to assign privileged roles.
+        $role = Role::where('slug', Role::USER)->firstOrFail();
 
         $user = User::create([
             'name' => $data['name'],

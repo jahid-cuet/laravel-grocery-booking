@@ -35,6 +35,11 @@ interface GroceryItemRepositoryInterface
     public function findOrFail(int|string $id): GroceryItem;
 
     /**
+     * Find an active grocery item by ID or fail.
+     */
+    public function findActiveOrFail(int|string $id): GroceryItem;
+
+    /**
      * Create a new grocery item.
      *
      * @param  array<string, mixed>  $data
@@ -65,5 +70,5 @@ interface GroceryItemRepositoryInterface
      *
      * @return LengthAwarePaginator<GroceryItem>
      */
-    public function getAvailablePaginated(int $perPage = 15): LengthAwarePaginator;
+    public function getAvailablePaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator;
 }

@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\User;
 use App\Services\GroceryService;
 use App\Services\OrderService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class StoreController extends Controller
@@ -30,16 +28,15 @@ class StoreController extends Controller
         $search = $request->input('search');
         $filters = array_filter(['search' => $search]);
 
-        $groceries = $this->groceryService->getAllPaginated($filters, 12);
+        $groceries = $this->groceryService->getAvailableItems(12, $filters);
 
-        // Fetch or create a default demo customer for the web storefront session
-        $demoUser = User::whereHas('role', fn ($q) => $q->where('slug', 'user'))->first();
-        $jwtToken = $demoUser ? JWTAuth::fromUser($demoUser) : '';
+        $user = Auth::user();
+        $jwtToken = $user ? JWTAuth::fromUser($user) : '';
 
         return view('store', [
             'groceries' => $groceries,
             'search' => $search,
-            'demoUser' => $demoUser,
+            'user' => $user,
             'jwtToken' => $jwtToken,
         ]);
     }
@@ -49,14 +46,12 @@ class StoreController extends Controller
      */
     public function orders(Request $request): View
     {
-        $demoUser = User::whereHas('role', fn ($q) => $q->where('slug', 'user'))->first();
-        $orders = $demoUser ? $this->orderService->getUserOrders($demoUser, 10) : new LengthAwarePaginator([], 0, 10);
-        $jwtToken = $demoUser ? JWTAuth::fromUser($demoUser) : '';
+        $user = Auth::user();
+        $orders = $this->orderService->getUserOrders($user, 10);
 
         return view('orders', [
             'orders' => $orders,
-            'demoUser' => $demoUser,
-            'jwtToken' => $jwtToken,
+            'user' => $user,
         ]);
     }
 }

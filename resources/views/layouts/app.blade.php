@@ -251,10 +251,11 @@
     <!-- Global Store State & AJAX Scripts -->
     <script>
         const API_JWT_TOKEN = @json(session('jwt_token') ?? ($jwtToken ?? ''));
-        let cart = JSON.parse(localStorage.getItem('grocery_cart') || '[]');
+        const CART_STORAGE_KEY = @json(auth()->check() ? 'grocery_cart_user_'.auth()->id() : 'grocery_cart_guest');
+        let cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
 
         function saveCart() {
-            localStorage.setItem('grocery_cart', JSON.stringify(cart));
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
             renderCart();
         }
 
@@ -439,6 +440,12 @@
         async function submitAjaxOrder() {
             if (cart.length === 0) {
                 showToast('Cart is empty!', 'error');
+                return;
+            }
+
+            if (!API_JWT_TOKEN) {
+                showToast('Please sign in before placing an order.', 'error');
+                window.location.href = @json(route('login'));
                 return;
             }
 

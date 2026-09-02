@@ -103,7 +103,7 @@
                                 </div>
 
                                 <!-- AJAX Live Stock Check Button (Section 5 Requirement) -->
-                                <button id="stock-btn-{{ $item->id }}" onclick="checkLiveStock({{ $item->id }}, '{{ addslashes($item->name) }}')" type="button" class="text-[11px] font-bold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-xl transition-all">
+                                <button id="stock-btn-{{ $item->id }}" onclick="checkLiveStock({{ $item->id }}, @js($item->name))" type="button" class="text-[11px] font-bold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-xl transition-all">
                                     {{ __('messages.check_stock') }}
                                 </button>
                             </div>
@@ -113,7 +113,7 @@
                                 <div class="w-20">
                                     <input type="number" id="qty-input-{{ $item->id }}" min="1" max="{{ max(1, $item->stock_quantity) }}" value="1" {{ $item->stock_quantity <= 0 ? 'disabled' : '' }} class="w-full text-center text-xs font-bold py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none disabled:opacity-50">
                                 </div>
-                                <button onclick="addToCart({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->price }}, {{ $item->stock_quantity }})" {{ $item->stock_quantity <= 0 ? 'disabled' : '' }} class="flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all {{ $item->stock_quantity > 0 ? 'bg-slate-900 hover:bg-brand-600 text-white shadow-sm active:scale-95' : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}">
+                                <button onclick="addToCart({{ $item->id }}, @js($item->name), {{ $item->price }}, {{ $item->stock_quantity }})" {{ $item->stock_quantity <= 0 ? 'disabled' : '' }} class="flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all {{ $item->stock_quantity > 0 ? 'bg-slate-900 hover:bg-brand-600 text-white shadow-sm active:scale-95' : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                     <span>{{ $item->stock_quantity > 0 ? __('messages.add_to_cart') : __('messages.out_of_stock') }}</span>
                                 </button>

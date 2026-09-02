@@ -33,7 +33,7 @@ class GroceryItemController extends Controller
      */
     public function show(int|string $id): GroceryItemResource
     {
-        $item = $this->groceryService->getById($id);
+        $item = $this->groceryService->getActiveById($id);
 
         return new GroceryItemResource($item);
     }

@@ -21,7 +21,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 // Public / Customer Storefront Views
 Route::get('/', [StoreController::class, 'index'])->name('store.index');
-Route::get('/orders', [StoreController::class, 'orders'])->name('store.orders');
+Route::get('/orders', [StoreController::class, 'orders'])->name('store.orders')->middleware('auth');
 
 // Admin Web Dashboard & Grocery Management Routes
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {

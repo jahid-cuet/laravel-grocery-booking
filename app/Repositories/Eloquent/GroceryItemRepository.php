@@ -7,6 +7,7 @@ use App\Repositories\Contracts\GroceryItemRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class GroceryItemRepository implements GroceryItemRepositoryInterface
@@ -50,6 +51,14 @@ class GroceryItemRepository implements GroceryItemRepositoryInterface
     }
 
     /**
+     * Find an active grocery item by ID or fail.
+     */
+    public function findActiveOrFail(int|string $id): GroceryItem
+    {
+        return GroceryItem::active()->findOrFail($id);
+    }
+
+    /**
      * Create a new grocery item.
      *
      * @param  array<string, mixed>  $data
@@ -89,18 +98,21 @@ class GroceryItemRepository implements GroceryItemRepositoryInterface
      */
     public function updateStock(GroceryItem|int|string $item, int $quantity, string $operation = 'set'): GroceryItem
     {
-        $model = $item instanceof GroceryItem ? $item : $this->findOrFail($item);
+        return DB::transaction(function () use ($item, $quantity, $operation) {
+            $id = $item instanceof GroceryItem ? $item->getKey() : $item;
+            $model = GroceryItem::whereKey($id)->lockForUpdate()->firstOrFail();
 
-        match ($operation) {
-            'set' => $model->stock_quantity = max(0, $quantity),
-            'increment' => $model->stock_quantity += $quantity,
-            'decrement' => $model->stock_quantity = max(0, $model->stock_quantity - $quantity),
-            default => throw new InvalidArgumentException("Unsupported stock operation: {$operation}"),
-        };
+            match ($operation) {
+                'set' => $model->stock_quantity = max(0, $quantity),
+                'increment' => $model->stock_quantity += $quantity,
+                'decrement' => $model->stock_quantity = max(0, $model->stock_quantity - $quantity),
+                default => throw new InvalidArgumentException("Unsupported stock operation: {$operation}"),
+            };
 
-        $model->save();
+            $model->save();
 
-        return $model->fresh();
+            return $model->fresh();
+        });
     }
 
     /**
@@ -108,9 +120,9 @@ class GroceryItemRepository implements GroceryItemRepositoryInterface
      *
      * @return LengthAwarePaginator<GroceryItem>
      */
-    public function getAvailablePaginated(int $perPage = 15): LengthAwarePaginator
+    public function getAvailablePaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        return GroceryItem::available()->latest()->paginate($perPage);
+        return $this->applyFilters($filters)->available()->latest()->paginate($perPage);
     }
 
     /**
