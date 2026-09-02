@@ -91,10 +91,12 @@ This application is built with a **4-tier layered architecture** emphasizing sep
 - Manage inventory with dedicated stock adjustments (`set`, `increment`, `decrement`).
 
 ### User / Customer Capabilities:
-- Browse available in-stock items with pagination and instant search.
-- Perform **Live Stock Checks** over AJAX without reloading the page.
-- Book multiple grocery items in a single atomic order with delivery notes.
-- View personalized order history with real-time status and line-item summaries.
+- Browse available in-stock items with pagination and instant search — **no login required**.
+- Perform **Live Stock Checks** over AJAX without reloading the page — **no login required**.
+- Book multiple grocery items in a single atomic order with delivery notes — **requires authentication** (`auth:api`).
+- View personalized order history with real-time status and line-item summaries — **requires authentication** (`auth:api`).
+
+> **Authentication Policy**: Catalogue browsing (`GET /api/groceries`) and Live Stock Checks (`GET /api/groceries/{id}`) are fully public. Placing orders (`POST /api/orders`) and viewing order history (`GET /api/orders`) strictly require a valid JWT bearer token. Unauthenticated order requests return `401 Unauthorized`.
 
 ---
 
@@ -311,10 +313,10 @@ curl -s -X GET http://127.0.0.1:8000/api/orders \
 
 ### 1. Interactive Blade Storefront:
 - **Customer Registration**: `/register` provides a validated Blade registration form and automatically signs in the new customer.
-- **Product Browsing**: Clean product grid with price tags, categories, and dynamic stock badges (`In Stock`, `Low Stock`, `Out of Stock`).
-- **AJAX Live Stock Check**: Section 5 interaction — clicking *"Live Stock Check"* queries `/api/groceries/{id}` and updates stock status without full page reload.
+- **Product Browsing**: Clean product grid with price tags, categories, and dynamic stock badges (`In Stock`, `Low Stock`, `Out of Stock`) — publicly accessible.
+- **AJAX Live Stock Check**: Section 5 interaction — clicking *"Live Stock Check"* queries `/api/groceries/{id}` and updates stock status without full page reload — publicly accessible.
 - **AJAX Cart Drawer**: Slide-over cart for adding, updating, and removing line items dynamically.
-- **AJAX Checkout**: Instant order submission with confirmation modal displaying the generated Order Number.
+- **AJAX Checkout**: Order submission requires an authenticated session. If a guest tries to check out, the UI immediately redirects them to `/login` before any API call is made.
 
 ### 2. Localization Support (Bonus):
 - English (`en`) and Bangla (`bn`) translations for the customer-facing storefront and shared layout (`lang/en/messages.php`, `lang/bn/messages.php`).
