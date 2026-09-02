@@ -12,10 +12,11 @@ A complete and robust **Grocery Booking System** where an **Admin** manages inve
 
 > **Interactive Walkthrough**: Real-time grocery browsing, AJAX live stock checking, slide-over cart drawer, and atomic booking checkout flow.
 
-<!-- Paste your GitHub uploaded video link or GIF below -->
-https://github.com/user-attachments/assets/YOUR_VIDEO_URL_HERE
 
----
+https://github.com/user-attachments/assets/a4ca1f4a-e40a-4d77-b036-71f84d0bda68
+
+
+
 
 ## Table of Contents
 - [Demo & Video Walkthrough](#-application-demo--video-walkthrough)
