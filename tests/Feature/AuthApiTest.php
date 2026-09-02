@@ -71,6 +71,22 @@ test('registration validates required fields and unique email', function () {
         ->assertJsonValidationErrors(['name', 'email', 'password']);
 });
 
+test('public registration cannot assign an admin role', function () {
+    $response = $this->postJson('/api/auth/register', [
+        'name' => 'Untrusted Admin',
+        'email' => 'untrusted-admin@example.com',
+        'password' => 'secret123',
+        'role' => 'admin',
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['role']);
+
+    $this->assertDatabaseMissing('users', [
+        'email' => 'untrusted-admin@example.com',
+    ]);
+});
+
 test('user can login with valid credentials', function () {
     $userRole = Role::where('slug', Role::USER)->first();
     User::create([
