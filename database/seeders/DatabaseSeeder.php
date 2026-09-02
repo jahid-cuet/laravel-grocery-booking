@@ -14,7 +14,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(RoleSeeder::class);
+        $this->call([
+            RoleSeeder::class,
+            GroceryItemSeeder::class,
+        ]);
 
         $adminRole = Role::where('slug', Role::ADMIN)->first();
         $userRole = Role::where('slug', Role::USER)->first();
