@@ -31,11 +31,19 @@ class EnsureUserHasRole
 
         $userRoleSlug = $user->role?->slug;
 
-        if (! $userRoleSlug || ! in_array($userRoleSlug, $roles, true)) {
+        // Flatten comma-separated roles (e.g. 'role:user,admin' passes as one string)
+        $allowedRoles = [];
+        foreach ($roles as $role) {
+            foreach (explode(',', $role) as $r) {
+                $allowedRoles[] = trim($r);
+            }
+        }
+
+        if (! $userRoleSlug || ! in_array($userRoleSlug, $allowedRoles, true)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Forbidden. You do not have permission to access this resource.',
-                'required_roles' => $roles,
+                'required_roles' => $allowedRoles,
                 'current_role' => $userRoleSlug,
             ], Response::HTTP_FORBIDDEN);
         }
